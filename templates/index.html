@@ -48,11 +48,44 @@
             flex-direction: column;
         }
         
+        .input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
         label {
             font-weight: 600;
             color: #555;
-            margin-bottom: 8px;
             font-size: 14px;
+        }
+        
+        .mic-btn {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            padding: 8px 12px;
+            font-size: 12px;
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+        }
+        
+        .mic-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(250, 112, 154, 0.3);
+        }
+        
+        .mic-btn.listening {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
         
         textarea, input {
@@ -181,8 +214,11 @@
         
         <div class="translator-box">
             <div class="input-group">
-                <label for="englishText">English Text:</label>
-                <textarea id="englishText" placeholder="Enter English text here..."></textarea>
+                <div class="input-header">
+                    <label for="englishText">English Text:</label>
+                    <button class="mic-btn" id="micBtn" onclick="startListening()">🎤 Speak English</button>
+                </div>
+                <textarea id="englishText" placeholder="Enter English text or use the mic button..."></textarea>
                 <div class="button-row">
                     <button class="speech-btn" onclick="speakEnglish()">🔊 Speak English</button>
                 </div>
@@ -215,6 +251,71 @@
     
     <script>
         let isPlaying = false;
+        let recognition;
+        let isListening = false;
+        
+        // Initialize Web Speech API
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            
+            recognition.onstart = function() {
+                isListening = true;
+                document.getElementById('micBtn').classList.add('listening');
+                document.getElementById('micBtn').textContent = '🎤 Listening...';
+            };
+            
+            recognition.onresult = function(event) {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                document.getElementById('englishText').value = transcript;
+            };
+            
+            recognition.onend = function() {
+                isListening = false;
+                document.getElementById('micBtn').classList.remove('listening');
+                document.getElementById('micBtn').textContent = '🎤 Speak English';
+                
+                // Auto-translate and speak after voice input
+                const englishText = document.getElementById('englishText').value.trim();
+                if (englishText) {
+                    setTimeout(() => {
+                        translateText();
+                    }, 500);
+                }
+            };
+            
+            recognition.onerror = function(event) {
+                document.getElementById('errorMsg').textContent = '❌ Error: ' + event.error;
+                document.getElementById('errorMsg').style.display = 'block';
+                isListening = false;
+                document.getElementById('micBtn').classList.remove('listening');
+                document.getElementById('micBtn').textContent = '🎤 Speak English';
+            };
+        }
+        
+        function startListening() {
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.style.display = 'none';
+            
+            if (!recognition) {
+                errorMsg.textContent = '❌ Speech Recognition not supported in this browser. Use Chrome, Edge, or Safari.';
+                errorMsg.style.display = 'block';
+                return;
+            }
+            
+            if (!isListening) {
+                document.getElementById('englishText').value = '';
+                recognition.start();
+            } else {
+                recognition.stop();
+            }
+        }
         
         function translateText() {
             const englishText = document.getElementById('englishText').value.trim();
@@ -248,6 +349,14 @@
                     document.getElementById('kannadaText').value = data.kannada_text;
                     successMsg.textContent = '✅ Translation successful!';
                     successMsg.style.display = 'block';
+                    
+                    // Auto-speak both English and Kannada
+                    setTimeout(() => {
+                        speakEnglish();
+                    }, 300);
+                    setTimeout(() => {
+                        speakKannada();
+                    }, 1500);
                 } else {
                     errorMsg.textContent = '❌ ' + data.error;
                     errorMsg.style.display = 'block';
