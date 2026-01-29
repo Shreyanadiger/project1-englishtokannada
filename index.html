@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English to Kannada Translator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        
+        .translator-box {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        textarea, input {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .clear-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .output-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .error {
+            color: #e74c3c;
+            padding: 12px;
+            background: #fadbd8;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .success {
+            color: #27ae60;
+            padding: 12px;
+            background: #d5f4e6;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #667eea;
+            display: none;
+            font-weight: 600;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #e0e0e0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 English to Kannada Translator</h1>
+        
+        <div class="translator-box">
+            <div class="input-group">
+                <label for="englishText">English Text:</label>
+                <textarea id="englishText" placeholder="Enter English text here..."></textarea>
+            </div>
+            
+            <div class="button-group">
+                <button onclick="translateText()">Translate</button>
+                <button class="clear-btn" onclick="clearAll()">Clear</button>
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Translating...</p>
+            </div>
+            
+            <div class="error" id="errorMsg"></div>
+            <div class="success" id="successMsg"></div>
+            
+            <div class="output-section">
+                <div class="input-group">
+                    <label for="kannadaText">Kannada Translation:</label>
+                    <textarea id="kannadaText" placeholder="Translation will appear here..." readonly></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function translateText() {
+            const englishText = document.getElementById('englishText').value.trim();
+            const errorMsg = document.getElementById('errorMsg');
+            const successMsg = document.getElementById('successMsg');
+            const loading = document.getElementById('loading');
+            
+            // Hide messages
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+            
+            if (!englishText) {
+                errorMsg.textContent = '⚠️ Please enter some English text to translate!';
+                errorMsg.style.display = 'block';
+                return;
+            }
+            
+            loading.style.display = 'block';
+            
+            fetch('/translate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: englishText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                if (data.success) {
+                    document.getElementById('kannadaText').value = data.kannada_text;
+                    successMsg.textContent = '✅ Translation successful!';
+                    successMsg.style.display = 'block';
+                } else {
+                    errorMsg.textContent = '❌ ' + data.error;
+                    errorMsg.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                errorMsg.textContent = '❌ Error: ' + error.message;
+                errorMsg.style.display = 'block';
+            });
+        }
+        
+        function clearAll() {
+            document.getElementById('englishText').value = '';
+            document.getElementById('kannadaText').value = '';
+            document.getElementById('errorMsg').style.display = 'none';
+            document.getElementById('successMsg').style.display = 'none';
+            document.getElementById('englishText').focus();
+        }
+        
+        // Allow Enter key to translate
+        document.getElementById('englishText').addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.key === 'Enter') {
+                translateText();
+            }
+        });
+    </script>
+</body>
+</html>
