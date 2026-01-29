@@ -1,8 +1,6 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify
 import requests
 import json
-import pyttsx3
-from io import BytesIO
 import os
 
 app = Flask(__name__)
@@ -118,35 +116,10 @@ KANNADA_DICTIONARY = {
 
 def text_to_speech(text, language='en'):
     """
-    Convert text to speech and return audio file
-    language: 'en' for English, 'kn' for Kannada
+    Note: Speech synthesis is now handled by browser Web Speech API
+    This function is kept for backward compatibility if needed
     """
-    try:
-        engine = pyttsx3.init()
-        
-        # Set language properties
-        if language == 'kn':
-            engine.setProperty('rate', 100)  # Slower for Kannada
-        else:
-            engine.setProperty('rate', 150)  # Normal speed for English
-        
-        # Save to BytesIO instead of file
-        audio_file = BytesIO()
-        engine.save_to_file(text, 'temp_audio.wav')
-        engine.runAndWait()
-        
-        # Read the temp file and return
-        with open('temp_audio.wav', 'rb') as f:
-            audio_data = f.read()
-        
-        # Clean up temp file
-        if os.path.exists('temp_audio.wav'):
-            os.remove('temp_audio.wav')
-        
-        return audio_data
-    except Exception as e:
-        print(f"TTS Error: {str(e)}")
-        return None
+    pass
 
 def translate_english_to_kannada(text):
     """
@@ -212,53 +185,13 @@ def translate():
 
 @app.route('/speak-english', methods=['POST'])
 def speak_english():
-    """API endpoint to get English speech"""
-    try:
-        data = request.get_json()
-        text = data.get('text', '').strip()
-        
-        if not text:
-            return jsonify({'success': False, 'error': 'No text provided'}), 400
-        
-        audio_data = text_to_speech(text, language='en')
-        
-        if audio_data:
-            return send_file(
-                BytesIO(audio_data),
-                mimetype='audio/wav',
-                as_attachment=True,
-                download_name='english_audio.wav'
-            )
-        else:
-            return jsonify({'success': False, 'error': 'Could not generate speech'}), 500
-    
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    """Speech synthesis is now handled by browser Web Speech API"""
+    return jsonify({'success': True, 'message': 'Use browser speech API'}), 200
 
 @app.route('/speak-kannada', methods=['POST'])
 def speak_kannada():
-    """API endpoint to get Kannada speech"""
-    try:
-        data = request.get_json()
-        text = data.get('text', '').strip()
-        
-        if not text:
-            return jsonify({'success': False, 'error': 'No text provided'}), 400
-        
-        audio_data = text_to_speech(text, language='kn')
-        
-        if audio_data:
-            return send_file(
-                BytesIO(audio_data),
-                mimetype='audio/wav',
-                as_attachment=True,
-                download_name='kannada_audio.wav'
-            )
-        else:
-            return jsonify({'success': False, 'error': 'Could not generate speech'}), 500
-    
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    """Speech synthesis is now handled by browser Web Speech API"""
+    return jsonify({'success': True, 'message': 'Use browser speech API'}), 200
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=PORT)

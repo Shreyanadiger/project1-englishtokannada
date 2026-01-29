@@ -381,26 +381,20 @@
                 return;
             }
             
-            fetch('/speak-english', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ text: englishText })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Speech generation failed');
-                return response.blob();
-            })
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const audio = new Audio(url);
-                audio.play();
-            })
-            .catch(error => {
-                errorMsg.textContent = '❌ Error generating speech: ' + error.message;
+            // Use Web Speech API for text-to-speech (more reliable)
+            const utterance = new SpeechSynthesisUtterance(englishText);
+            utterance.lang = 'en-US';
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+            
+            utterance.onerror = function(event) {
+                errorMsg.textContent = '❌ Error: Could not generate speech - ' + event.error;
                 errorMsg.style.display = 'block';
-            });
+            };
+            
+            window.speechSynthesis.cancel(); // Cancel any ongoing speech
+            window.speechSynthesis.speak(utterance);
         }
         
         function speakKannada() {
@@ -415,26 +409,20 @@
                 return;
             }
             
-            fetch('/speak-kannada', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ text: kannadaText })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Speech generation failed');
-                return response.blob();
-            })
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const audio = new Audio(url);
-                audio.play();
-            })
-            .catch(error => {
-                errorMsg.textContent = '❌ Error generating speech: ' + error.message;
+            // Use Web Speech API for text-to-speech
+            const utterance = new SpeechSynthesisUtterance(kannadaText);
+            utterance.lang = 'kn-IN'; // Kannada language code
+            utterance.rate = 0.8; // Slightly slower for Kannada
+            utterance.pitch = 1;
+            utterance.volume = 1;
+            
+            utterance.onerror = function(event) {
+                errorMsg.textContent = '❌ Error: Could not generate speech - ' + event.error;
                 errorMsg.style.display = 'block';
-            });
+            };
+            
+            window.speechSynthesis.cancel(); // Cancel any ongoing speech
+            window.speechSynthesis.speak(utterance);
         }
         
         function clearAll() {
